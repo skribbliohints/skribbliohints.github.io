@@ -211,7 +211,8 @@
           if(yAxisSelect.value === document.getElementById('numWordsWithXOption').textContent) {
             const frequency_map = {};
             for(const word in words) {
-              frequency_map[words[word][xAxisAttribute]] = (frequency_map[words[word][xAxisAttribute]] || 0) + 1;
+              const transformed_numerical_value = getTransformedNumericalValue ( xAxisAttribute , words[word][xAxisAttribute] );
+              frequency_map[transformed_numerical_value] = (frequency_map[transformed_numerical_value] || 0) + 1;
             }
             data = Object.keys(frequency_map).map(key => [key, frequency_map[key]]);
           } else {
@@ -280,6 +281,9 @@
         if(!document.getElementById('colorCheckbox').checked) {
           document.getElementById('colorKey').style.display = "none";
         }
+        if(!document.getElementById('showGrapherCheckbox').checked) {
+          document.getElementById('grapher').style.display = "none";
+        }
         
         oReq.open("GET", "words.json");
         oReq.send();
@@ -297,21 +301,22 @@
         <form>
           <input type='checkbox' id='colorCheckbox' name='colorCheckbox' onClick='colorCheckboxOnClick.bind(this)()'>
           <label for='colorCheckbox'>Show difficulty of word using color</label>
-          <br />
+          <br>
           <div id='colorKey'>
             <canvas id='colorCanvas' width='200' height='40'></canvas><br>
             <span style='font-size: 12px'>Colors closer to white indicate low confidence.  Perfect white indicates no data.</span>
-            <br />
+            <br>
           </div>
           <input type='checkbox' id='showGrapherCheckbox' name='showGrapherCheckbox' onClick='showGrapherCheckboxOnClick.bind(this)()'>
           <label for='showGrapherCheckbox'>Show data grapher</label>
-          <div id='grapher' style='display: none;'>
-            <br />
+          <br>
+          <div id='grapher'>
             X Axis
             <select id='xAxisSelect' onchange='showGraph()'>
               <option>Select</option>
               <!-- More options are added by JavaScript code -->
             </select>
+            <br>
             Y Axis
             <select id='yAxisSelect' onchange='showGraph()'>
               <option id='numWordsWithXOption'>Number of words with the X value</option>
