@@ -1,7 +1,7 @@
 
 
 function getGraph(data, horizontal_axis_label, vertical_axis_label) {
-  // data should be an array of [x,y] pairs (each pair should be an array)
+  // data should be an array of arrays.  Each subarray should be [x,y,label].  label is optional.
   const container = document.createElement('div');
   const canvas = document.createElement('canvas');
   container.appendChild(canvas);
@@ -15,8 +15,8 @@ function getGraph(data, horizontal_axis_label, vertical_axis_label) {
   Chart.defaults.global.legend.labels.usePointStyle = true;
   
   const formatted_data = [];
-  for(const [x, y] of data) {
-    formatted_data.push({x: Number(x), y: Number(y)});
+  for(const [x, y, label] of data) {
+    formatted_data.push({x: Number(x), y: Number(y), label});
   }
   const test_data = {
     datasets: [
@@ -48,6 +48,21 @@ function getGraph(data, horizontal_axis_label, vertical_axis_label) {
             labelString: vertical_axis_label
           }
         }]
+      },
+      tooltips: {
+        enabled: true,
+        mode: 'single',
+        callbacks: {
+          label: function(tooltipItems, data) {
+            return "("
+              + String(tooltipItems.xLabel) + ", "
+              + String(tooltipItems.yLabel) + ")"
+              + (formatted_data[tooltipItems.index] && formatted_data[tooltipItems.index].label
+                ? " " + formatted_data[tooltipItems.index].label
+                : ''
+              );
+          }
+        }
       }
     }
   });

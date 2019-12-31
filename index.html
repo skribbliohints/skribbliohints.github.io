@@ -219,7 +219,8 @@
             for(const word in words) {
               data.push([
                 getTransformedNumericalValue ( xAxisAttribute , words[word][xAxisAttribute] ) ,
-                getTransformedNumericalValue ( yAxisAttribute , words[word][yAxisAttribute] )
+                getTransformedNumericalValue ( yAxisAttribute , words[word][yAxisAttribute] ) ,
+                word
               ]);
             }
           }
