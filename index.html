@@ -208,7 +208,7 @@
           const yAxisSelect = document.getElementById('yAxisSelect');
           const yAxisAttribute = getAttribute(yAxisSelect);
           let data = [];
-          if(yAxisSelect.value === 'Frequency') {
+          if(yAxisSelect.value === document.getElementById('numWordsWithXOption').textContent) {
             const frequency_map = {};
             for(const word in words) {
               frequency_map[words[word][xAxisAttribute]] = (frequency_map[words[word][xAxisAttribute]] || 0) + 1;
@@ -314,7 +314,7 @@
             </select>
             Y Axis
             <select id='yAxisSelect' onchange='showGraph()'>
-              <option>Frequency</option>
+              <option id='numWordsWithXOption'>Number of words with the X value</option>
               <!-- More options are added by JavaScript code -->
             </select>
             <div id='graphDiv'></div>
