@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <title>skribbl.io hints - Search the default word list used by skribbl.io</title>
+    <meta name="description" content="The most complete public word list.  Search the list by entering the hint that skribbl.io gives you, for example: _____b____">
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width = device-width, initial-scale = 1">
+    <meta name="google-site-verification" content="-WSPNA0Q4EhYOEZRbIHmz6kERwO56vF7Bfze7Ec-d8c" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+      .b {
+        border: 1px solid black;
+        border-radius: 3px;
+        padding: 1px;
+        float: left;
+      }
+
+
+      @media (max-width : 600px) {
+        input {
+          margin: 3px;
+          font-size: 20px;
+        }
+        .b {
+          margin: 3px;
+          font-size: 20px;
+        }
+      }
+
+    </style>
+    <script src='Chart.bundle.min.js'></script>
+    <script src='grapher.js'></script>
+    <script>
+      let words = null;
+      let sorts = [
+        (a,b) => (words[b].publicGameCount || 0) - (words[a].publicGameCount || 0),
+        (a,b) => (words[b].difficultyWeight || 0) - (words[a].difficultyWeight || 0),
+        (a,b) => (words[b].count || 0) - (words[a].count || 0)
+      ];
+      let word_by_idString = {};
+      
+      const IDEAL_MINIMUM_DIFFICULTY_WEIGHT = 50;
+
+      const NAME_MAP = {
+        "count": "Total number of times seen (mostly in private games)",
+        "publicGameCount": "Number of times seen in public games",
+        "difficultyWeight": "Number of players observed (including bot)"
+      };
+      function getTransformedNumericalValue(key, value) { // this abstraction is used for graphing
+        if(key === 'lastSeenTime') {
+          return value;
+        } else if(key === 'difficulty') {
+          return ((1 - value) * 100);
+        } else if(key === 'difficultyTile') {
+          return (value * 100);
+        } else if(key in NAME_MAP) {
+          return value;
+        }
+        return value;
+      }
+      function renderKey(key, value, showValue=true) {
+        // key and value should be escaped to prevent HTML/JavaScript injection
+        const transformed_numerical_value = getTransformedNumericalValue(key, value);
+        if(key === 'lastSeenTime') {
+          return 'Last seen' + (showValue ? ': ' + String(new Date(transformed_numerical_value)) : '');
+        } else if(key === 'difficulty') {
+          return "Percent of players that guess correctly (including the bot)" + (showValue ? ": " + String(transformed_numerical_value) + '%' : '');
+        } else if(key === 'difficultyTile') {
+          return "Difficulty percentile" + (showValue ? ": " + transformed_numerical_value.toFixed(1) + "%" : '');
+        } else if(key in NAME_MAP) {
+          return NAME_MAP[key] + (showValue ? ': ' + transformed_numerical_value : '');
+        }
+        return key + (showValue ? ': ' + transformed_numerical_value : '');
+      }
+      function expand(idString) {
+        const el = document.getElementById(idString);
+        const word = word_by_idString[idString];
+        if(el.style.width !== '100%') {
+          el.style.width = '100%';
+          el.innerHTML = word + `<button style="float: right;" onClick='collapse("${idString}");'>X</button><ul>` +
+            Object.keys(words[word]).reduce((acc, key) =>
+              acc + '<li>' + renderKey(key, words[word][key]) + "</li>",
+            '')
+            + '</ul>';
+        }
+      }
+      function collapse(idString) {
+        // it doesn't work if I don't use setTimeout here
+        setTimeout(function(){
+          const word = word_by_idString[idString];
+          const el = document.getElementById(idString);
+          el.innerHTML = word;
+          el.style.width = 'initial';
+        }, 1);
+      }
+
+      
+      function myEscape(text) {
+        return text.split('').map(c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c] || c)).join('');
+      }
+      function myRecursiveEscape(a) {
+        // a may be of any type except function
+        let result;
+        if(typeof a === 'number' || typeof a === 'boolean' || typeof a === 'undefined') {
+          result = a;
+        } else if(typeof a === 'string') {
+          result = myEscape(a);
+        } else if(typeof a === 'object') {
+          if(a === null) {
+            result = null;
+          } else {
+            result = {};
+            for(const key in a) {
+              result[myEscape(key)] = myRecursiveEscape(a[key]);
+            }
+          }
+        }
+        return result;
+      }
+
+      function apply_whiteness(val_between_0_and_1, whiteness) {
+        return 1 - ((1 - val_between_0_and_1) * (1 - whiteness));
+      }
+      function get_rgb_string(color_parts_between_0_and_1) {
+        return "rgb(" + color_parts_between_0_and_1.map(v => Math.floor(v * 255)).join(',') + ')';
+      }
+      function get_0_1_rgb_values(difficulty, whiteness) {
+        return [apply_whiteness(Math.pow(difficulty, 0.125), whiteness), apply_whiteness(Math.pow(1 - difficulty, 0.125), whiteness), whiteness];
+      }
+      function getTableInnerHTML(words, sorts=[], filters=[], useColor) {
+        let parts = [];
+
+        let word_array = Object.keys(words);
+        for(const f of filters) {
+          word_array = word_array.filter(f);
+        }
+        word_array = word_array.sort((a,b) => {
+          for(const s of sorts) {
+            if(s(a,b) !== s(b,a)) {
+              return s(a,b);
+            }
+          }
+          return 0;
+        });
+        let idNumber = 0;
+        for(const word of word_array) {
+          let backgroundColorString = '';
+          if((useColor || document.getElementById('colorCheckbox').checked) && words[word].publicGameCount) {
+            const whiteness = 1 - Math.min(1, words[word].difficultyWeight / IDEAL_MINIMUM_DIFFICULTY_WEIGHT);
+            const color_parts_between_0_and_1 = get_0_1_rgb_values(words[word].difficultyTile, whiteness);
+            backgroundColorString = "background-color: " + get_rgb_string(color_parts_between_0_and_1) + ';';
+          }
+          
+          // word has already been escaped
+          const idString = 'wordDiv' + String(idNumber);
+          word_by_idString[idString] = word;
+          parts.push(`<div class="b" id="${idString}" style="${backgroundColorString}" onClick="expand('${idString}')">${word}</div>`);
+          idNumber++;
+        }
+        if(parts.length === 0) {
+          parts.push('No matching words');
+        }
+        return parts.join('\n');
+      }
+
+      function getFilterFromSkribblioHint(skribblioHint) {
+        const re = new RegExp('^' + skribblioHint.split('').map(char => char === '_' ? '[a-zA-Z0-9.]' : (char === '.' ? '\\.' : char)).join('') + '$');
+        return a => skribblioHint === '' || re.test(a);
+      }
+      
+      
+      function searchBoxOnInput() {
+        const input = this.value;
+        let filters = [];
+        filters.push(getFilterFromSkribblioHint(input));
+        document.querySelector('#wordlist').innerHTML = getTableInnerHTML(words, sorts, filters, document.getElementById('colorCheckbox').checked);
+      }
+      
+      
+      function colorCheckboxOnClick() {
+        searchBoxOnInput.bind(document.getElementById('searchBox'))();
+        document.getElementById('colorKey').style.display = this.checked ? "initial" : "none";
+      }
+      function showGrapherCheckboxOnClick() {
+        document.getElementById('grapher').style.display = this.checked ? "initial" : "none";
+      }
+      function getListOfWordAttributes() {
+        const list_of_word_attributes = [];
+        for(const word of Object.keys(words)) {
+          for(const key in words[word]) {
+            if(list_of_word_attributes.find(el => String(el) === String(key)) === undefined) {
+              list_of_word_attributes.push(key);
+            }
+          }
+        }
+        return list_of_word_attributes;
+      }
+        
+      function getAttribute(axisSelect) {
+        return getListOfWordAttributes().find(attr => renderKey(attr, null, false) === axisSelect.value);
+      }
+      function showGraph() {
+        document.getElementById('graphDiv').innerHTML = '';
+        if(xAxisSelect.value !== 'Select') {
+          const xAxisSelect = document.getElementById('xAxisSelect');
+          const xAxisAttribute = getAttribute(xAxisSelect);
+          const yAxisSelect = document.getElementById('yAxisSelect');
+          const yAxisAttribute = getAttribute(yAxisSelect);
+          let data = [];
+          if(yAxisSelect.value === 'Frequency') {
+            const frequency_map = {};
+            for(const word in words) {
+              frequency_map[words[word][xAxisAttribute]] = (frequency_map[words[word][xAxisAttribute]] || 0) + 1;
+            }
+            data = Object.keys(frequency_map).map(key => [key, frequency_map[key]]);
+          } else {
+            for(const word in words) {
+              data.push([
+                getTransformedNumericalValue ( xAxisAttribute , words[word][xAxisAttribute] ) ,
+                getTransformedNumericalValue ( yAxisAttribute , words[word][yAxisAttribute] )
+              ]);
+            }
+          }
+          document.getElementById('graphDiv').appendChild(getGraph(data, xAxisSelect.value, yAxisSelect.value));
+        }
+      }
+      function getGrapherOption(text) {
+        const option = document.createElement('option');
+        option.textContent = renderKey(text, null, false);
+        return option;
+      }
+
+      function onLoad() {
+        var oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", function() {
+          // parse the words then escape
+          words = myRecursiveEscape(JSON.parse(this.response));
+
+          // attach difficulty 'tiles to words
+          Object.keys(words)
+            .filter(w => words[w].difficulty != undefined)
+            .sort((w1, w2) => words[w1].difficulty - words[w2].difficulty)
+            .forEach((word, index, array) => {
+              words[word].difficultyTile = index / array.length
+            });
+            
+          
+          const xAxisSelect = document.getElementById('xAxisSelect');
+          const yAxisSelect = document.getElementById('yAxisSelect');
+          for(const word_attribute of getListOfWordAttributes()) {
+            xAxisSelect.appendChild(getGrapherOption(renderKey(word_attribute, null, false)));
+            yAxisSelect.appendChild(getGrapherOption(renderKey(word_attribute, null, false)));
+          }
+
+          document.querySelector('#wordlist').innerHTML = getTableInnerHTML(
+            words,
+            sorts,
+            [getFilterFromSkribblioHint(document.querySelector('#searchBox').value)]
+          );
+        });
+        
+        const ctx = document.getElementById('colorCanvas').getContext('2d');
+        const OFFSET_X = 0;
+        const OFFSET_Y = 20;
+        const CANVAS_WIDTH = document.getElementById('colorCanvas').width;
+        const CANVAS_HEIGHT = document.getElementById('colorCanvas').height;
+        const NUM_STEPS = 500;
+        for(let difficulty = 0; difficulty < 1; difficulty += 1.0 / NUM_STEPS) {
+          for(let whiteness = 0; whiteness < 1; whiteness += 1.0 / NUM_STEPS) {
+            ctx.fillStyle = get_rgb_string(get_0_1_rgb_values(difficulty, whiteness));
+            ctx.fillRect(OFFSET_X + (difficulty * (CANVAS_WIDTH - OFFSET_X)), OFFSET_Y + (whiteness * (CANVAS_HEIGHT - OFFSET_Y)), 1, 1);
+          }
+        }
+        ctx.fillStyle = 'black';
+        ctx.font = '15px Arial';
+        ctx.fillText('Easy', OFFSET_X, 15);
+        ctx.fillText('Hard', CANVAS_WIDTH - 35, 15);
+        
+        if(!document.getElementById('colorCheckbox').checked) {
+          document.getElementById('colorKey').style.display = "none";
+        }
+        
+        oReq.open("GET", "words.json");
+        oReq.send();
+      }
+    </script>
+  </head>
+  <body onLoad="onLoad()">
+    <div class='container'>
+      <h2 style='text-align: center;'>skribbl.io default word list database</h2>
+      <div>
+        <p style='margin: 5px 10px;'>
+          Below is a list of words that skribbl.io uses in public games.<br>
+          Enter the hint provided by skribbl.io (e.g. <span style='letter-spacing: 2px;'>_oa__</span>) to search the list.
+        </p>
+        <form>
+          <input type='checkbox' id='colorCheckbox' name='colorCheckbox' onClick='colorCheckboxOnClick.bind(this)()'>
+          <label for='colorCheckbox'>Show difficulty of word using color</label>
+          <br />
+          <div id='colorKey'>
+            <canvas id='colorCanvas' width='200' height='40'></canvas><br>
+            <span style='font-size: 12px'>Colors closer to white indicate low confidence.  Perfect white indicates no data.</span>
+            <br />
+          </div>
+          <input type='checkbox' id='showGrapherCheckbox' name='showGrapherCheckbox' onClick='showGrapherCheckboxOnClick.bind(this)()'>
+          <label for='showGrapherCheckbox'>Show data grapher</label>
+          <div id='grapher' style='display: none;'>
+            <br />
+            X Axis
+            <select id='xAxisSelect' onchange='showGraph()'>
+              <option>Select</option>
+              <!-- More options are added by JavaScript code -->
+            </select>
+            Y Axis
+            <select id='yAxisSelect' onchange='showGraph()'>
+              <option>Frequency</option>
+              <!-- More options are added by JavaScript code -->
+            </select>
+            <div id='graphDiv'></div>
+          </div>
+        </form>
+      </div>
+      <form>
+        <input type='text' id='searchBox' oninput='searchBoxOnInput.bind(this)()' placeholder='Search by blanks, for example _____b____' style="width: 100%; letter-spacing: 2px; margin: 3px;">
+      </form>
+      <div id='wordlist' style="margin: 3px;">
+         Retrieving word list.  This may take up to 30 seconds.
+      </div>
+    </div>
+  </body>
+</html>
