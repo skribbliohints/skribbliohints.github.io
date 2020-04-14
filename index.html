@@ -41,6 +41,11 @@
       let word_by_idString = {};
       
       const IDEAL_MINIMUM_DIFFICULTY_WEIGHT = 50;
+      
+      const LANGUAGE_TO_PATH_MAP = {
+        "English": "words.json",
+        "German": "German.json"
+      };
 
       const NAME_MAP = {
         "count": "Total number of times seen (mostly in private games)",
@@ -232,8 +237,13 @@
         option.textContent = renderKey(text, null, false);
         return option;
       }
-
-      function onLoad() {
+      
+      function handleLanguageChange(event) {
+        console.log(event.target.value);
+        fetchWords(LANGUAGE_TO_PATH_MAP[event.target.value]);
+      }
+      
+      function fetchWords(path) {
         var oReq = new XMLHttpRequest();
         oReq.addEventListener("load", function() {
           // parse the words then escape
@@ -250,6 +260,8 @@
           
           const xAxisSelect = document.getElementById('xAxisSelect');
           const yAxisSelect = document.getElementById('yAxisSelect');
+          xAxisSelect.innerHTML = "<option>Select</option>";
+          yAxisSelect.innerHTML = "<option id='numWordsWithXOption'>Number of words with the X value</option>";
           for(const word_attribute of getListOfWordAttributes()) {
             xAxisSelect.appendChild(getGrapherOption(renderKey(word_attribute, null, false)));
             yAxisSelect.appendChild(getGrapherOption(renderKey(word_attribute, null, false)));
@@ -260,7 +272,16 @@
             sorts,
             [getFilterFromSkribblioHint(document.querySelector('#searchBox').value)]
           );
+
+          showGraph();
         });
+        
+        oReq.open("GET", path);
+        oReq.send();
+      }
+
+      function onLoad() {
+        document.getElementById("languageSelect").addEventListener('change', handleLanguageChange);
         
         const ctx = document.getElementById('colorCanvas').getContext('2d');
         const OFFSET_X = 0;
@@ -286,8 +307,7 @@
           document.getElementById('grapher').style.display = "none";
         }
         
-        oReq.open("GET", "words.json");
-        oReq.send();
+        fetchWords(LANGUAGE_TO_PATH_MAP[document.getElementById("languageSelect").value]);
       }
     </script>
   </head>
@@ -295,6 +315,10 @@
     <div class='container'>
       <h2 style='text-align: center;'>skribbl.io default word list database</h2>
       <div>
+      	<select id="languageSelect">
+      	  <option value="English">English</option>
+      	  <option value="German">German</option>
+      	</select>
         <p style='margin: 5px 10px;'>
           Below is a list of words that skribbl.io uses in public games.<br>
           Enter the hint provided by skribbl.io (e.g. <span style='letter-spacing: 2px;'>_oa__</span>) to search the list.
@@ -314,14 +338,12 @@
           <div id='grapher'>
             X Axis
             <select id='xAxisSelect' onchange='showGraph()'>
-              <option>Select</option>
-              <!-- More options are added by JavaScript code -->
+              <!-- options are added by JavaScript code -->
             </select>
             <br>
             Y Axis
             <select id='yAxisSelect' onchange='showGraph()'>
-              <option id='numWordsWithXOption'>Number of words with the X value</option>
-              <!-- More options are added by JavaScript code -->
+              <!-- options are added by JavaScript code -->
             </select>
             <div id='graphDiv'></div>
           </div>
