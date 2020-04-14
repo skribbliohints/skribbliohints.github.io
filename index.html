@@ -315,10 +315,6 @@
     <div class='container'>
       <h2 style='text-align: center;'>skribbl.io default word list database</h2>
       <div>
-      	<select id="languageSelect">
-      	  <option value="English">English</option>
-      	  <option value="German">German</option>
-      	</select>
         <p style='margin: 5px 10px;'>
           Below is a list of words that skribbl.io uses in public games.<br>
           Enter the hint provided by skribbl.io (e.g. <span style='letter-spacing: 2px;'>_oa__</span>) to search the list.
@@ -334,6 +330,12 @@
           </div>
           <input type='checkbox' id='showGrapherCheckbox' name='showGrapherCheckbox' onClick='showGrapherCheckboxOnClick.bind(this)()'>
           <label for='showGrapherCheckbox'>Show data grapher</label>
+          <div style='float: right;'>
+            Language: <select id="languageSelect">
+              <option value="English">English</option>
+              <option value="German">German</option>
+            </select>
+          </div>
           <br>
           <div id='grapher'>
             X Axis
