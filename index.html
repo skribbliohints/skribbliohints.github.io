@@ -230,6 +230,23 @@
             }
           }
           document.getElementById('graphDiv').appendChild(getGraph(data, xAxisSelect.value, yAxisSelect.value));
+
+          const rdiv = document.createElement('div');
+          rdiv.style.textAlign = 'center';
+          const cleanedData = data
+            .filter(point =>
+              point[0] !== undefined && point[1] !== undefined && !isNaN(point[0]) && !isNaN(point[1])
+            ).map(point =>
+              [Number(point[0]), Number(point[1])] // The values in data are not numbers for some reason.
+            );
+          let sxy = cleanedData.reduce((acc,e) => acc + e[0]*e[1], 0);
+          let sx2 = cleanedData.reduce((acc,e) => acc + e[0]*e[0], 0);
+          let sy2 = cleanedData.reduce((acc,e) => acc + e[1]*e[1], 0);
+          let sx = cleanedData.reduce((acc,e) => acc + e[0], 0);
+          let sy = cleanedData.reduce((acc,e) => acc + e[1], 0);
+          let r = (cleanedData.length*sxy - sx*sy)/Math.sqrt((cleanedData.length * sx2 - Math.pow(sx, 2)) * (cleanedData.length * sy2 - Math.pow(sy, 2)));
+          rdiv.textContent = "r = " + r.toFixed(4);
+          document.getElementById('graphDiv').appendChild(rdiv);
         }
       }
       function getGrapherOption(text) {
@@ -239,7 +256,6 @@
       }
       
       function handleLanguageChange(event) {
-        console.log(event.target.value);
         fetchWords(LANGUAGE_TO_PATH_MAP[event.target.value]);
       }
       
@@ -348,6 +364,7 @@
               <!-- options are added by JavaScript code -->
             </select>
             <div id='graphDiv'></div>
+            <div id='rDiv'></div>
           </div>
         </form>
       </div>
