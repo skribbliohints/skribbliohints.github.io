@@ -1,9 +1,7 @@
 # skribbliohints.github.io
-Most complete skribbl.io word list as of now (2019).  The data was collected by a bot that played skribbl.io for a few months.  Once enough data was collected, the bot was taken down, but it may run again some day.
+This GitHub site contains data about the words used by skribbl.io.  The English data was collected in late 2019, and it was complete until November 9, 2022, when skribbl.io released an update that added more words.  Now the English and German data is outdated.  The Spanish data is still up-to-date.
 
 [https://skribbliohints.github.io](https://skribbliohints.github.io)
-
-Information about the data, added April 2021:
 
 The raw data has been placed in 3 files in this repository: words.json (English), German.json (German), and Spanish.json (Spanish).  The data was collected by a bot that played both public and private games on skribbl.io.  It played private games against itself in two separate browser tabs, and it played public games against actual humans.  However, on approximately March 2, 2020, skribbl.io added reCAPTCHA, and since then it has placed the bot in public games with no other players, so the bot cannot play against humans.  The English data was collected in late 2019, but the German and Spanish data were not collected until after reCAPTCHA had been added, so they do not have public game data.
 
