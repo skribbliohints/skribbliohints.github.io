@@ -44,7 +44,9 @@
       const LANGUAGE_TO_PATH_MAP = {
         "English": "EnglishWordBank.json",
         "German": "GermanWordBank.json",
-        "Spanish": "SpanishWordBank.json"
+        "Spanish": "SpanishWordBank.json",
+        "French": "FrenchWordBank.json",
+        "Korean": "KoreanWordBank.json"
       };
 
       const NAME_MAP = {
@@ -154,7 +156,7 @@
 
       function getFilterFromSkribblioHint(skribblioHint) {
         const re = new RegExp(
-          '^' + skribblioHint.split('').map(char => char === '_' ? '[\\p{L}0-9./]' : RegExp.escape(char)).join('') + '$',
+          '^' + skribblioHint.split('').map(char => char === '_' ? '[\\p{L}0-9./\']' : RegExp.escape(char)).join('') + '$',
           'iu'
         );
         return a => skribblioHint === '' || re.test(a);
@@ -336,6 +338,8 @@
               <option value="English">English</option>
               <option value="German">German</option>
               <option value="Spanish">Spanish</option>
+              <option value="French">French</option>
+              <option value="Korean">Korean</option>
             </select>
           </div>
           <br>
