@@ -40,14 +40,6 @@
       let word_by_idString = {};
       
       const IDEAL_MINIMUM_PICKED = 15;
-      
-      const LANGUAGE_TO_PATH_MAP = {
-        "English": "EnglishWordBank.json",
-        "German": "GermanWordBank.json",
-        "Spanish": "SpanishWordBank.json",
-        "French": "FrenchWordBank.json",
-        "Korean": "KoreanWordBank.json"
-      };
 
       const NAME_MAP = {
         "picked": "Number of times seen",
@@ -231,26 +223,47 @@
       }
       
       function handleLanguageChange(event) {
-        fetchWords(LANGUAGE_TO_PATH_MAP[event.target.value]);
+        fetchWords(event.target.value);
       }
       
       function fetchWords(path) {
         var oReq = new XMLHttpRequest();
         oReq.addEventListener("load", function() {
           // parse the words then escape
-          const dataByNumWordsAndNumChars = myRecursiveEscape(JSON.parse(this.response));
-          words = Object.create(null);
-          for(const o1 of Object.values(dataByNumWordsAndNumChars)) {
-            for(const o2 of Object.values(o1)) {
-              for(const item of Object.values(o2)) {
-                // I can't stand it being called "difficulty", so I rename it to "successRate"
-                item.successRate = item.difficulty;
-                delete item['difficulty'];
+          words = myRecursiveEscape(JSON.parse(this.response));
 
-                words[item['word']] = item;
-              }
-            }
-          }
+          /*
+"""
+Python code to convert data file from wlauyeung/Skribblio-Word-Bank to the format used by this site.
+"""
+import json
+
+LANGUAGE = 'Korean' # PUT LANGUAGE HERE
+
+wordBank = None
+with open(f'{LANGUAGE}WordBank.json', 'r') as fin:
+  wordBank = json.load(fin)
+
+words = dict()
+for v1 in wordBank.values():
+  for v2 in v1.values():
+    for item in v2:
+      words[item['word']] = item
+
+for k in words:
+  del words[k]['letters']
+  del words[k]['lens']
+  # I can't stand it being called "difficulty", so I rename it to "successRate"
+  words[k]['successRate'] = words[k]['difficulty']
+  del words[k]['difficulty']
+  # OPTIONAL: delete picked and successRate.
+  # Use this for non-English since they just have zeros for picked and difficulty/successRate.
+  del words[k]['picked']
+  del words[k]['successRate']
+
+with open(f'{LANGUAGE}.json','w') as fout:
+  json.dump(words, fout)
+          */
 
           // attach success rate quantiles to words
           Object.keys(words)
@@ -310,7 +323,7 @@
           document.getElementById('grapher').style.display = "none";
         }
         
-        fetchWords(LANGUAGE_TO_PATH_MAP[document.getElementById("languageSelect").value]);
+        fetchWords(document.getElementById("languageSelect").value);
       }
     </script>
   </head>
@@ -335,11 +348,11 @@
           <label for='showGrapherCheckbox'>Show data grapher</label>
           <div style='float: right;'>
             Language: <select id="languageSelect">
-              <option value="English">English</option>
-              <option value="German">German</option>
-              <option value="Spanish">Spanish</option>
-              <option value="French">French</option>
-              <option value="Korean">Korean</option>
+              <option value="English.json">English</option>
+              <option value="German.json">German</option>
+              <option value="Spanish.json">Spanish</option>
+              <option value="French.json">French</option>
+              <option value="Korean.json">Korean</option>
             </select>
           </div>
           <br>
