@@ -57,13 +57,16 @@
       function expand(idString) {
         const el = document.getElementById(idString);
         const word = word_by_idString[idString];
-        if(el.style.width !== '100%') {
+        const listContents = Object.keys(words[word]).reduce((acc, key) => {
+          const content = renderKey(key, words[word][key]);
+          return acc + (content ? '<li>' + content + "</li>" : '');
+        }, '');
+        if(listContents !== '' && el.style.width !== '100%') {
           el.style.width = '100%';
-          el.innerHTML = word + `<button style="float: right;" onClick='collapse("${idString}");'>X</button><ul>` +
-            Object.keys(words[word]).reduce((acc, key) => {
-              const content = renderKey(key, words[word][key]);
-              return content ? acc + '<li>' + content + "</li>" : '';
-            }, '')
+          el.innerHTML = word
+            + `<button style="float: right;" onClick='collapse("${idString}");'>X</button>`
+            + '<ul>'
+            + listContents
             + '</ul>';
         }
       }
