@@ -153,13 +153,12 @@
       }
 
       function getFilterFromSkribblioHint(skribblioHint) {
-        const re = new RegExp('^' + skribblioHint.split('').map(char => char === '_' ? '[a-zA-ZÁ-ü0-9./]' : (char === '.' ? '\\.' : char)).join('') + '$');
+        const re = new RegExp(
+          '^' + skribblioHint.split('').map(char => char === '_' ? '[\\p{L}0-9./]' : RegExp.escape(char)).join('') + '$',
+          'iu'
+        );
         return a => skribblioHint === '' || re.test(a);
       }
-      // non-ascii letters:
-      //  German: äöüÄÖÜß
-      //  Spanish: upper and lower vowels with accent, upper and lower ñ, and ü
-      
       
       function searchBoxOnInput() {
         const input = this.value;
