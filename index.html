@@ -242,15 +242,28 @@
             .forEach((word, index, array) => {
               words[word].successRateQuantile = index / array.length
             });
-            
-          
-          const xAxisSelect = document.getElementById('xAxisSelect');
-          const yAxisSelect = document.getElementById('yAxisSelect');
-          xAxisSelect.innerHTML = "<option>Select</option>";
-          yAxisSelect.innerHTML = "<option id='numWordsWithXOption'>Number of words with the X value</option>";
-          for(const attr in NAME_MAP) {
-            xAxisSelect.appendChild(getGrapherOption(attr));
-            yAxisSelect.appendChild(getGrapherOption(attr));
+
+          // display analysis tools only if the language has at least some data to analyze
+          if(Object.values(words).some(
+            wordObj => Object.keys(wordObj).some(
+              k => renderKey(k, wordObj[k])
+            )
+          )) {
+            document.querySelectorAll(".analysisTools").forEach(el => {
+              el.style.display = "initial";
+            });
+            const xAxisSelect = document.getElementById('xAxisSelect');
+            const yAxisSelect = document.getElementById('yAxisSelect');
+            xAxisSelect.innerHTML = "<option>Select</option>";
+            yAxisSelect.innerHTML = "<option id='numWordsWithXOption'>Number of words with the X value</option>";
+            for(const attr in NAME_MAP) {
+              xAxisSelect.appendChild(getGrapherOption(attr));
+              yAxisSelect.appendChild(getGrapherOption(attr));
+            }
+          } else {
+            document.querySelectorAll(".analysisTools").forEach(el => {
+              el.style.display = "none";
+            });
           }
 
           document.querySelector('#wordlist').innerHTML = getTableInnerHTML(
@@ -306,16 +319,18 @@
           Enter the hint provided by skribbl.io (e.g. <span style='letter-spacing: 2px;'>_oa__</span>) to search the list.
         </p>
         <form>
-          <input type='checkbox' id='colorCheckbox' name='colorCheckbox' onClick='colorCheckboxOnClick.bind(this)()'>
-          <label for='colorCheckbox'>Show difficulty of word using color</label>
-          <br>
-          <div id='colorKey'>
-            <canvas id='colorCanvas' width='200' height='40'></canvas><br>
-            <span style='font-size: 12px'>Colors closer to white indicate low confidence.  Perfect white indicates no data.</span>
+          <span class='analysisTools'>
+            <input type='checkbox' id='colorCheckbox' name='colorCheckbox' onClick='colorCheckboxOnClick.bind(this)()'>
+            <label for='colorCheckbox'>Show difficulty of word using color</label>
             <br>
-          </div>
-          <input type='checkbox' id='showGrapherCheckbox' name='showGrapherCheckbox' onClick='showGrapherCheckboxOnClick.bind(this)()'>
-          <label for='showGrapherCheckbox'>Show data grapher</label>
+            <div id='colorKey'>
+              <canvas id='colorCanvas' width='200' height='40'></canvas><br>
+              <span style='font-size: 12px'>Colors closer to white indicate low confidence.  Perfect white indicates no data.</span>
+              <br>
+            </div>
+            <input type='checkbox' id='showGrapherCheckbox' name='showGrapherCheckbox' onClick='showGrapherCheckboxOnClick.bind(this)()'>
+            <label for='showGrapherCheckbox'>Show data grapher</label>
+          </span>
           <div style='float: right;'>
             Language: <select id="languageSelect">
               <option value="English.json">English</option>
@@ -326,19 +341,21 @@
             </select>
           </div>
           <br>
-          <div id='grapher'>
-            X Axis
-            <select id='xAxisSelect' onchange='showGraph()'>
-              <!-- options are added by JavaScript code -->
-            </select>
-            <br>
-            Y Axis
-            <select id='yAxisSelect' onchange='showGraph()'>
-              <!-- options are added by JavaScript code -->
-            </select>
-            <div id='graphDiv'></div>
-            <div id='rDiv'></div>
-          </div>
+          <span class='analysisTools'>
+            <div id='grapher'>
+              X Axis
+              <select id='xAxisSelect' onchange='showGraph()'>
+                <!-- options are added by JavaScript code -->
+              </select>
+              <br>
+              Y Axis
+              <select id='yAxisSelect' onchange='showGraph()'>
+                <!-- options are added by JavaScript code -->
+              </select>
+              <div id='graphDiv'></div>
+              <div id='rDiv'></div>
+            </div>
+          </span>
         </form>
       </div>
       <form>
